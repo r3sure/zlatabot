@@ -4,14 +4,10 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 
-import logging
-
 from services.matrix import calculate_matrix
 from services.personal_astro import get_natal_data
-from models.user import get_connection
 
 router = Router()
-logger = logging.getLogger(__name__)
 
 
 class MatrixForm(StatesGroup):
@@ -38,28 +34,19 @@ def _format_result(day: int, month: int, year: int) -> str:
 @router.message(Command("matrix"))
 async def cmd_matrix(message: Message, state: FSMContext):
     user_id = message.from_user.id
-    logger.info("MATRIX: user_id=%s chat_id=%s", user_id, message.chat.id)
-    conn = get_connection()
-    row = conn.execute("SELECT user_id, birth_date FROM users WHERE user_id = ?", (user_id,)).fetchone()
-    conn.close()
-    logger.info("MATRIX: db row = %s", dict(row) if row else None)
-
     data = get_natal_data(user_id)
     if data:
-        logger.info("MATRIX: found birth_date = %s", data["birth_date"])
         bd = data["birth_date"]
         day, month, year = map(int, bd.split("."))
         await message.answer(_format_result(day, month, year))
         return
 
-    logger.info("MATRIX: no profile data, asking for date")
     await state.set_state(MatrixForm.waiting_date)
     await message.answer(
         "✨ <b>Матрица Судьбы</b>\n\n"
         "У тебя ещё не заполнен профиль.\n"
         "Напиши дату рождения в формате <b>ДД.ММ.ГГГГ</b>,\n"
-        "я рассчитаю матрицу по 22 арканам.\n\n"
-        f"(твой id: {user_id})"
+        "я рассчитаю матрицу по 22 арканам."
     )
 
 
