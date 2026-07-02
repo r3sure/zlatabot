@@ -31,15 +31,6 @@ def _format_result(day: int, month: int, year: int) -> str:
     )
 
 
-@router.message(Command("myid"))
-async def cmd_myid(message: Message):
-    await message.answer(
-        f"👤 Твой from_user.id: <code>{message.from_user.id}</code>\n"
-        f"💬 chat.id: <code>{message.chat.id}</code>\n"
-        f"🤖 bot.id: <code>{message.bot.id}</code>"
-    )
-
-
 @router.message(Command("matrix"))
 async def cmd_matrix(message: Message, state: FSMContext):
     user_id = message.from_user.id
