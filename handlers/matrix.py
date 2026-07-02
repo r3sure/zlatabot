@@ -6,6 +6,7 @@ from aiogram.types import CallbackQuery, Message
 
 from services.matrix import calculate_matrix
 from services.personal_astro import get_natal_data
+from models.user import get_connection
 
 router = Router()
 
@@ -28,6 +29,22 @@ def _format_result(day: int, month: int, year: int) -> str:
         + "\n\n🌟 Это твои энергии на данный момент. "
         "Помни: арканы — не приговор, а подсказки. "
         "Что откликается — то твоё."
+    )
+
+
+@router.message(Command("debug_matrix"))
+async def cmd_debug_matrix(message: Message):
+    user_id = message.from_user.id
+    conn = get_connection()
+    from config import DATABASE_PATH
+    import os
+    rows = conn.execute("SELECT user_id, birth_date, name FROM users WHERE user_id = ?", (user_id,)).fetchall()
+    conn.close()
+    await message.answer(
+        f"user_id: {user_id}\n"
+        f"DB: {DATABASE_PATH}\n"
+        f"exists: {os.path.exists(DATABASE_PATH)}\n"
+        f"rows: {[dict(r) for r in rows]}"
     )
 
 
