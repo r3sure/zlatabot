@@ -1,0 +1,9 @@
+services:
+  bot:
+    build: .
+    container_name: zlatabot
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
