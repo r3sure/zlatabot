@@ -5,6 +5,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 
 from services.matrix import calculate_matrix
+from services.personal_astro import get_natal_data
 
 router = Router()
 
@@ -13,13 +14,39 @@ class MatrixForm(StatesGroup):
     waiting_date = State()
 
 
+def _format_result(day: int, month: int, year: int) -> str:
+    positions = calculate_matrix(day, month, year)
+    lines = []
+    for p in positions:
+        lines.append(
+            f"<b>{p['arcana']}. {p['name']}</b> — {p['position']}, {p['meaning']}\n"
+            f"{p['description']}"
+        )
+    return (
+        "✨ <b>Твоя Матрица Судьбы</b>\n\n"
+        + "\n\n".join(lines)
+        + "\n\n🌟 Это твои энергии на данный момент. "
+        "Помни: арканы — не приговор, а подсказки. "
+        "Что откликается — то твоё."
+    )
+
+
 @router.message(Command("matrix"))
 async def cmd_matrix(message: Message, state: FSMContext):
+    user_id = message.from_user.id
+    data = get_natal_data(user_id)
+    if data:
+        bd = data["birth_date"]
+        day, month, year = map(int, bd.split("."))
+        await message.answer(_format_result(day, month, year))
+        return
+
     await state.set_state(MatrixForm.waiting_date)
     await message.answer(
         "✨ <b>Матрица Судьбы</b>\n\n"
-        "Напиши свою дату рождения в формате <b>ДД.ММ.ГГГГ</b>,\n"
-        "и я рассчитаю твою матрицу по 22 арканам."
+        "У тебя ещё не заполнен профиль.\n"
+        "Напиши дату рождения в формате <b>ДД.ММ.ГГГГ</b>,\n"
+        "я рассчитаю матрицу по 22 арканам."
     )
 
 
@@ -39,22 +66,8 @@ async def handle_date(message: Message, state: FSMContext):
         await message.answer("Дата выглядит неверно. Проверь и попробуй ещё раз.")
         return
 
-    positions = calculate_matrix(day, month, year)
-
-    lines = []
-    for p in positions:
-        lines.append(
-            f"<b>{p['arcana']}. {p['name']}</b> — {p['position']}, {p['meaning']}\n"
-            f"{p['description']}"
-        )
-
     await state.clear()
-    await message.answer(
-        "✨ <b>Твоя Матрица Судьбы</b>\n\n" + "\n\n".join(lines) + "\n\n"
-        "🌟 Это твои энергии на данный момент. "
-        "Помни: арканы — не приговор, а подсказки. "
-        "Что откликается — то твоё.",
-    )
+    await message.answer(_format_result(day, month, year))
 
 
 @router.callback_query(F.data == "menu_matrix")
