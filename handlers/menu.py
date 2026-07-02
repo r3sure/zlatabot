@@ -15,7 +15,6 @@ def main_menu_kb():
     b.button(text="🌙 Толкование снов", callback_data="menu_dream")
     b.button(text="⭐ Астрология", callback_data="menu_to_astro")
     b.button(text="💬 Чат со Златой", callback_data="menu_chat")
-    b.button(text="✳️ Матрица Судьбы", callback_data="menu_matrix")
     b.button(text="💎 Премиум", callback_data="menu_buy")
     b.button(text="👤 Мой профиль", callback_data="menu_profile")
     b.adjust(1)
