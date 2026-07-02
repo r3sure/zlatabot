@@ -9,7 +9,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from handlers.menu import main_menu_kb
 from models.user import get_connection, was_deleted, start_trial, has_premium_access
-from services.astrology import ZODIAC_SIGNS_RU
+from services.astrology import ZODIAC_SIGNS_RU, SIGN_GENITIVE, SIGN_DATIVE
 from services.names import detect_gender, capitalize_name
 from services.natal import resolve_city_coords, validate_city
 
@@ -321,7 +321,7 @@ async def belief_show_horoscope(callback: CallbackQuery, state: FSMContext):
 
     ctx = get_daily_context()
     prompt = (
-        f"Ты — астролог Злата. Составь гороскоп на сегодня ({ctx['date']}) для знака {sign_name}.\n\n"
+        f"Ты — астролог Злата. Составь гороскоп на сегодня ({ctx['date']}) для знака {SIGN_GENITIVE.get(sign_name, sign_name)}.\n\n"
         f"Текущая астрологическая обстановка:\n"
         f"{ctx['day_of_week']}, {ctx['season']}\n"
         f"Луна в {ctx['moon_phase']}, в знаке {ctx['moon_sign']}\n"
@@ -334,7 +334,7 @@ async def belief_show_horoscope(callback: CallbackQuery, state: FSMContext):
         text = await asyncio.to_thread(generate_text, prompt, temperature=0.85)
     except Exception:
         text = (
-            f"Звёзды сегодня благосклонны к {sign_name}. "
+            f"Звёзды сегодня благосклонны к {SIGN_DATIVE.get(sign_name, sign_name)}. "
             f"День располагает к спокойствию и размышлениям. "
             f"Прислушайся к своей интуиции — она подскажет верный путь."
         )
@@ -343,7 +343,7 @@ async def belief_show_horoscope(callback: CallbackQuery, state: FSMContext):
     b.button(text="🌟 Хочу персонализированный прогноз", callback_data="belief_register")
     b.button(text="📋 В меню", callback_data="menu_main")
     await msg.edit_text(
-        f"🔮 <b>Гороскоп для {sign_name}</b>\n\n{text}",
+        f"🔮 <b>Гороскоп для {SIGN_GENITIVE.get(sign_name, sign_name)}</b>\n\n{text}",
         reply_markup=b.as_markup(),
     )
     await callback.answer()

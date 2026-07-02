@@ -5,7 +5,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from aiogram import Bot
 
 from services.ai import generate_text
-from services.astrology import get_planets_summary, get_moon_info, ZODIAC_SIGNS_RU
+from services.astrology import get_planets_summary, get_moon_info, ZODIAC_SIGNS_RU, SIGN_GENITIVE
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ class SchedulerService:
 
             prompt = (
                 f"Ты — астролог Злата. Напиши краткий гороскоп на сегодня "
-                f"для знака {sign_ru} и один совет дня.\n"
+                f"для знака {SIGN_GENITIVE.get(sign_ru, sign_ru)} и один совет дня.\n"
                 f"Планеты: {planets}\n"
                 f"Луна: {moon['phase']} в знаке {moon['sign']}\n\n"
                 f"Формат:\n"

@@ -7,7 +7,7 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from services.ai import generate_text
-from services.astrology import ZODIAC_SIGNS_RU, get_moon_info, get_planets_summary
+from services.astrology import ZODIAC_SIGNS_RU, SIGN_GENITIVE, get_moon_info, get_planets_summary
 
 router = Router()
 
@@ -48,7 +48,7 @@ async def show_horoscope(callback: CallbackQuery):
         b = InlineKeyboardBuilder()
         b.button(text="↩️ Назад", callback_data="menu_to_astro")
         await callback.message.edit_text(
-            f"🔮 <b>Гороскоп для {sign_ru}</b>\n\n{text}",
+            f"🔮 <b>Гороскоп для {SIGN_GENITIVE.get(sign_ru, sign_ru)}</b>\n\n{text}",
             reply_markup=b.as_markup(),
         )
         await callback.answer()
@@ -68,7 +68,7 @@ async def show_horoscope(callback: CallbackQuery):
 
     prompt = (
         f"Ты — эзотерический астролог Злата. Напиши гороскоп на сегодня "
-        f"({date.today().strftime('%d.%m.%Y')}) для знака {sign_ru}.\n"
+        f"({date.today().strftime('%d.%m.%Y')}) для знака {SIGN_GENITIVE.get(sign_ru, sign_ru)}.\n"
         f"Астрологическая сводка на сегодня:\n"
         f"- Положение планет: {planets}\n"
         f"- Луна в знаке {moon['sign']}, фаза: {moon['phase']}\n\n"
@@ -92,7 +92,7 @@ async def show_horoscope(callback: CallbackQuery):
     b = InlineKeyboardBuilder()
     b.button(text="↩️ Назад", callback_data="menu_to_astro")
     await status.edit_text(
-        f"🔮 <b>Гороскоп для {sign_ru}</b>\n\n{text}",
+        f"🔮 <b>Гороскоп для {SIGN_GENITIVE.get(sign_ru, sign_ru)}</b>\n\n{text}",
         reply_markup=b.as_markup(),
     )
     await callback.answer()

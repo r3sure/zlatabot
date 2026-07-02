@@ -8,7 +8,7 @@ from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 
 from services.ai import generate_text
-from services.astrology import get_moon_info
+from services.astrology import get_moon_info, SIGN_GENITIVE
 
 logger = logging.getLogger(__name__)
 
@@ -241,7 +241,7 @@ async def _generate_energy_text() -> tuple[str, str, str]:
 async def _generate_horoscope_text(sign_ru: str) -> str:
     m = get_moon_info()
     prompt = (
-        f"Ты — астролог Злата. Напиши гороскоп на сегодня для знака {sign_ru}.\n"
+        f"Ты — астролог Злата. Напиши гороскоп на сегодня для знака {SIGN_GENITIVE.get(sign_ru, sign_ru)}.\n"
         f"Луна: {m['phase']} в знаке {m['sign']}.\n\n"
         f"Формат: 2-3 предложения. Без подписи. Без заголовка. Только текст."
     )
@@ -279,7 +279,7 @@ async def post_horoscope(bot, sign_ru: str):
     moon = _moon_footer()
     img_bytes = _generate_horoscope(sign_ru)
     cta = "\n\n✍️ Хотите индивидуальный разбор? Напишите мне — @Zlataesotericbot"
-    caption = _fmt_caption(f"♈ <b>Гороскоп для {sign_ru}</b>\n\n{text}\n\n{moon}{cta}\n\n#гороскоп")
+    caption = _fmt_caption(f"♈ <b>Гороскоп для {SIGN_GENITIVE.get(sign_ru, sign_ru)}</b>\n\n{text}\n\n{moon}{cta}\n\n#гороскоп")
     from aiogram.types import BufferedInputFile
     await bot.send_photo(CHANNEL_ID, BufferedInputFile(img_bytes, "horoscope.png"), caption=caption)
     logger.info(f"Пост «Гороскоп {sign_ru}» отправлен")
