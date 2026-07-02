@@ -23,6 +23,7 @@ from handlers.personal import router as personal_router
 from handlers.payment import router as payment_router
 from handlers.admin import router as admin_router
 from handlers.starson import router as starson_router
+from handlers.matrix import router as matrix_router
 from services.scheduler import SchedulerService
 
 logging.basicConfig(level=logging.INFO)
@@ -42,6 +43,7 @@ dp.include_router(personal_router)
 dp.include_router(payment_router)
 dp.include_router(admin_router)
 dp.include_router(starson_router)
+dp.include_router(matrix_router)
 dp.include_router(chat_router)
 
 scheduler: SchedulerService | None = None
