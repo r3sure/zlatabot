@@ -13,7 +13,11 @@ else:
     TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 
 PROXY = os.getenv("PROXY", "")
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+_api_key_path = BASE_DIR / "API.txt"
+if _api_key_path.exists():
+    GROQ_API_KEY = _api_key_path.read_text().strip()
+else:
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
