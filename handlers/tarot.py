@@ -552,7 +552,7 @@ async def _spread7_text(cards: list[tuple[int, str]], situation: str) -> str:
 @router.message(TarotForm.waiting_situation_7)
 async def cmd_spread_7(message: Message, state: FSMContext):
     user_id = message.chat.id
-    if not is_premium(user_id):
+    if not has_premium_access(user_id):
         await message.answer("💎 <b>Расклад на 7 карт</b> — для подписчиков.")
         await state.clear()
         return

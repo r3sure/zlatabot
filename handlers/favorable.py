@@ -5,7 +5,7 @@ from aiogram.filters import Command
 from aiogram.types import Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from models.user import is_premium
+from models.user import has_premium_access
 from services.favorable_days import generate_favorable_days
 
 router = Router()
@@ -14,7 +14,7 @@ router = Router()
 @router.message(Command("favorable"))
 async def cmd_favorable(message: Message):
     user_id = message.chat.id
-    if not is_premium(user_id):
+    if not has_premium_access(user_id):
         b = InlineKeyboardBuilder()
         b.button(text="💎 Оформить подписку", callback_data="menu_profile")
         b.button(text="📋 Меню", callback_data="menu_main")

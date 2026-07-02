@@ -91,7 +91,7 @@ def has_premium_access(user_id: int) -> bool:
     return is_premium(user_id) or is_trial(user_id)
 
 
-def start_trial(user_id: int, days: int = 7):
+def start_trial(user_id: int, days: int = 3):
     """Grant a trial subscription to a user."""
     from datetime import datetime, timedelta
     end = (datetime.now() + timedelta(days=days)).isoformat()

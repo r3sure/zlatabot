@@ -74,7 +74,7 @@ async def cmd_personal_horoscope(message: Message):
 @router.message(Command("monthly"))
 async def cmd_monthly(message: Message):
     user_id = message.chat.id
-    if not is_premium(user_id):
+    if not has_premium_access(user_id):
         b = InlineKeyboardBuilder()
         b.button(text="💎 Оформить подписку", callback_data="menu_profile")
         b.button(text="📋 Меню", callback_data="menu_main")
@@ -107,7 +107,7 @@ async def cmd_monthly(message: Message):
 @router.message(Command("deep_compat"))
 async def cmd_deep_compat(message: Message, state: FSMContext):
     user_id = message.chat.id
-    if not is_premium(user_id):
+    if not has_premium_access(user_id):
         data = get_natal_data(user_id)
         if not data:
             b = InlineKeyboardBuilder()
