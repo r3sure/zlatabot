@@ -542,10 +542,15 @@ async def _spread7_text(cards: list[tuple[int, str]], situation: str) -> str:
     try:
         return await asyncio.to_thread(generate_text, prompt, temperature=0.85)
     except Exception:
+        fallback = "\n".join(
+            f"<b>{p}:</b> {name}" for p, (_, name) in zip(SPREAD7_POSITIONS, cards)
+        )
         return (
-            "Карты сплелись в глубокий узор твоей судьбы. "
-            "Каждая карта — ключ к пониманию. "
-            "Доверься этому знанию — ответы уже внутри тебя."
+            f"Вот какие карты выпали:\n\n{fallback}\n\n"
+            f"Каждая из них несёт свой смысл в твоей ситуации. "
+            f"Попробуй заглянуть в себя — "
+            f"какая карта откликается больше всего? "
+            f"Доверься своей интуиции 🌟"
         )
 
 
@@ -584,24 +589,11 @@ async def cmd_spread_7(message: Message, state: FSMContext):
     if media:
         await message.answer_media_group(media)
 
-    # Interpretation without buttons — stays visible
-    await message.answer(f"🔮 <b>Расклад на 7 карт</b>\n\n{text}")
-
-    # Buttons message — only this gets deleted on menu
     b = InlineKeyboardBuilder()
-    b.button(text="📋 Меню", callback_data="spread7_menu")
-    await message.answer("🔮 Выбери действие:", reply_markup=b.as_markup())
+    b.button(text="📋 Меню", callback_data="menu_main")
+    await message.answer(
+        f"🔮 <b>Расклад на 7 карт</b>\n\n{text}",
+        reply_markup=b.as_markup(),
+    )
     await state.clear()
-
-
-@router.callback_query(F.data == "spread7_menu")
-async def spread7_menu(callback: CallbackQuery, state: FSMContext):
-    await callback.answer()
-    try:
-        await callback.message.delete()
-    except Exception:
-        pass
-    await state.clear()
-    from handlers.menu import main_menu_kb, _build_menu_message
-    msg = await _build_menu_message(callback.from_user.id)
     await callback.message.answer(msg, reply_markup=main_menu_kb())
