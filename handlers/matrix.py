@@ -3,6 +3,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from services.matrix import calculate_matrix
 from services.personal_astro import get_natal_data
@@ -12,6 +13,12 @@ router = Router()
 
 class MatrixForm(StatesGroup):
     waiting_date = State()
+
+
+def _result_kb():
+    b = InlineKeyboardBuilder()
+    b.button(text="📋 Меню", callback_data="menu_main")
+    return b.as_markup()
 
 
 def _format_result(day: int, month: int, year: int) -> str:
@@ -38,7 +45,7 @@ async def cmd_matrix(message: Message, state: FSMContext):
     if data:
         bd = data["birth_date"]
         day, month, year = map(int, bd.split("."))
-        await message.answer(_format_result(day, month, year))
+        await message.answer(_format_result(day, month, year), reply_markup=_result_kb())
         return
 
     await state.set_state(MatrixForm.waiting_date)
@@ -67,7 +74,7 @@ async def handle_date(message: Message, state: FSMContext):
         return
 
     await state.clear()
-    await message.answer(_format_result(day, month, year))
+    await message.answer(_format_result(day, month, year), reply_markup=_result_kb())
 
 
 @router.callback_query(F.data == "menu_matrix")
@@ -78,7 +85,7 @@ async def callback_matrix(callback: CallbackQuery, state: FSMContext):
     if data:
         bd = data["birth_date"]
         day, month, year = map(int, bd.split("."))
-        await callback.message.answer(_format_result(day, month, year))
+        await callback.message.answer(_format_result(day, month, year), reply_markup=_result_kb())
         return
     await state.set_state(MatrixForm.waiting_date)
     await callback.message.answer(
