@@ -3,12 +3,12 @@ import random
 
 from aiogram import Router
 from aiogram.filters import Command
-from aiogram.types import Message, FSInputFile
+from aiogram.types import Message, BufferedInputFile
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from services.ai import generate_text
 from services.astrology import get_moon_info
-from services.moon_img import get_moon_image_path
+from services.moon_img import get_moon_image_bytes
 
 router = Router()
 
@@ -45,8 +45,8 @@ async def cmd_moon(message: Message):
 
     await status.delete()
 
-    img_path = get_moon_image_path()
-    photo = FSInputFile(img_path)
+    img_bytes = get_moon_image_bytes()
+    photo = BufferedInputFile(img_bytes.getvalue(), filename="moon.png")
 
     b = InlineKeyboardBuilder()
     b.button(text="📋 Меню", callback_data="menu_main")

@@ -241,11 +241,7 @@ async def _send_3_spread(message: Message, cards: list, positions: tuple[str, st
 
     # Send action buttons as a separate message (menu-related → disappears)
     b = InlineKeyboardBuilder()
-    if source != "day":
-        b.button(text="🔄 Перетянуть", callback_data="spread3_regen")
-    b.button(text="❌ Отмена", callback_data="spread3_delete")
     b.button(text="📋 Меню", callback_data="spread3_menu")
-    b.adjust(2, 1) if source != "day" else b.adjust(1, 2)
     header = f"📅 {date_str} — " if date_str else ""
     buttons_msg = await message.answer(f"{header}🔮 Выбери действие:", reply_markup=b.as_markup())
 
