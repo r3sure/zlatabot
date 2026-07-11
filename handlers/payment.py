@@ -95,7 +95,7 @@ async def buy_ruble_menu(callback: CallbackQuery):
     await callback.answer()
     b = InlineKeyboardBuilder()
     for key, plan in RUBLE_PLANS.items():
-        b.button(text=f"{plan['label']} — {plan['amount']}₽", callback_data=f"buy_ruble_{key}")
+        b.button(text=f"{plan['label']} — {plan['amount']}₽", callback_data=f"rpay_{key}")
     b.button(text="↩️ Назад", callback_data="menu_buy")
     b.adjust(1)
     await callback.message.edit_text(
@@ -105,10 +105,10 @@ async def buy_ruble_menu(callback: CallbackQuery):
     )
 
 
-@router.callback_query(F.data.startswith("buy_ruble_"))
+@router.callback_query(F.data.startswith("rpay_"))
 async def buy_ruble(callback: CallbackQuery):
     await callback.answer()
-    key = callback.data.split("_", 2)[2]
+    key = callback.data.split("_", 1)[1]
     plan = RUBLE_PLANS.get(key)
     if not plan:
         await callback.answer("План не найден")
@@ -124,9 +124,33 @@ async def buy_ruble(callback: CallbackQuery):
 
     await callback.message.edit_text(
         f"💎 <b>Премиум — {plan['label']}</b>\n\n"
-        f"Стоимость: <b>{plan['amount']}₽</b>\n"
-        f"Срок: <b>{plan['label']}</b>\n\n"
+        f"Стоимость: <b>{plan['amount']}₽</b>\n\n"
         f"После оплаты премиум активируется автоматически.",
+        reply_markup=b.as_markup(),
+    )
+
+
+@router.callback_query(F.data.startswith("buy_"))
+async def buy_plan(callback: CallbackQuery):
+    key = callback.data.split("_", 1)[1]
+    plan = PLANS.get(key)
+    if not plan:
+        await callback.answer("План не найден")
+        return
+
+    await callback.answer()
+
+    b = InlineKeyboardBuilder()
+    b.button(text=f"⭐ {plan['stars']} Stars", callback_data=f"pay_{key}")
+    if YOOMONEY_WALLET:
+        b.button(text=f"💵 {RUBLE_PLANS[key]['amount']}₽", callback_data=f"rpay_{key}")
+    b.button(text="↩️ Назад", callback_data="menu_buy")
+    b.adjust(2, 1)
+
+    await callback.message.edit_text(
+        f"💎 <b>Премиум — {plan['label']}</b>\n\n"
+        f"Срок: <b>{plan['label']}</b>\n"
+        f"Выбери способ оплаты:",
         reply_markup=b.as_markup(),
     )
 
