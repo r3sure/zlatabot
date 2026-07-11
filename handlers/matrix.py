@@ -6,7 +6,7 @@ from aiogram.types import CallbackQuery, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from services.matrix import calculate_matrix
-from services.personal_astro import get_natal_data
+from services.personal_astro import get_natal_data, parse_db_date
 
 router = Router()
 
@@ -44,7 +44,7 @@ async def cmd_matrix(message: Message, state: FSMContext):
     data = get_natal_data(user_id)
     if data:
         bd = data["birth_date"]
-        day, month, year = map(int, bd.split("."))
+        day, month, year = parse_db_date(bd)
         await message.answer(_format_result(day, month, year), reply_markup=_result_kb())
         return
 
@@ -84,7 +84,7 @@ async def callback_matrix(callback: CallbackQuery, state: FSMContext):
     data = get_natal_data(user_id)
     if data:
         bd = data["birth_date"]
-        day, month, year = map(int, bd.split("."))
+        day, month, year = parse_db_date(bd)
         await callback.message.answer(_format_result(day, month, year), reply_markup=_result_kb())
         return
     await state.set_state(MatrixForm.waiting_date)

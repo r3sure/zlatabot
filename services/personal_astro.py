@@ -8,6 +8,16 @@ from services.astrology import get_daily_context, get_moon_info, ZODIAC_SIGNS_RU
 from models.user import get_connection
 
 
+def parse_db_date(date_str: str) -> tuple[int, int, int]:
+    """Parse birth_date from DB — supports DD.MM.YYYY and YYYY-MM-DD."""
+    parts = date_str.replace("-", ".").split(".")
+    if len(parts) != 3:
+        raise ValueError(f"Invalid date: {date_str}")
+    if len(parts[0]) == 4:  # YYYY-MM-DD
+        return int(parts[2]), int(parts[1]), int(parts[0])
+    return int(parts[0]), int(parts[1]), int(parts[2])  # DD.MM.YYYY
+
+
 def get_natal_data(user_id: int) -> dict | None:
     conn = get_connection()
     row = conn.execute(
@@ -25,7 +35,7 @@ def _make_subject(data: dict) -> AstrologicalSubject | None:
     try:
         bd = data["birth_date"]
         bt = data.get("birth_time", "12:00") or "12:00"
-        day, month, year = map(int, bd.split("."))
+        day, month, year = parse_db_date(bd)
         hour, minute = map(int, bt.split(":"))
         return AstrologicalSubject(
             data.get("name", "User"),
@@ -120,7 +130,7 @@ async def generate_deep_compatibility(user_id: int, partner_name: str,
     natal1 = _natal_summary(data)
 
     try:
-        day, month, year = map(int, partner_birth.split("."))
+        day, month, year = parse_db_date(partner_birth)
         hour, minute = map(int, partner_time.split(":"))
         subj2 = AstrologicalSubject(
             partner_name, year, month, day, hour, minute,
