@@ -168,8 +168,8 @@ async def compat_age1(message: Message, state: FSMContext):
         await message.answer("Напиши возраст числом, например: 25")
         return
     age = int(text)
-    if age < 14 or age > 120:
-        await message.answer("Возраст должен быть от 14 до 120 лет.")
+    if age < 14 or age > 70:
+        await message.answer("Возраст должен быть от 14 до 70 лет.")
         return
     await state.update_data(age1=text)
     await state.set_state(CompatForm.day1)
@@ -271,8 +271,8 @@ async def compat_age2(message: Message, state: FSMContext):
         await message.answer("Напиши возраст числом, например: 25")
         return
     age = int(text)
-    if age < 14 or age > 120:
-        await message.answer("Возраст должен быть от 14 до 120 лет.")
+    if age < 14 or age > 70:
+        await message.answer("Возраст должен быть от 14 до 70 лет.")
         return
     await state.update_data(age2=text)
     await state.set_state(CompatForm.day2)
