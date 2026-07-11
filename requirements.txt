@@ -9,3 +9,4 @@ reportlab
 redis
 gspread
 oauth2client
+playwright
