@@ -13,7 +13,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from services.ai import generate_chat, generate_text
 from models.user import get_connection, has_premium_access
-from services.tarot_deck import random_card, card_image_path
+from services.tarot_deck import random_card, draw_cards, card_image_path
 from services.astrology import get_moon_info
 
 router = Router()
@@ -106,7 +106,7 @@ async def _maybe_do_tarot(message: Message, state: FSMContext, user_text: str, h
     is_spread = bool(re.search(r'(расклад|спред|3\s*карт|три\s*карт)', user_text, re.IGNORECASE))
 
     if is_spread:
-        cards = [random_card() for _ in range(3)]
+        cards = draw_cards(3)
         positions = ["Ситуация", "Препятствие", "Совет"]
         interpretation = await _chat_tarot_text(cards, user_text, positions, user_gender)
     else:

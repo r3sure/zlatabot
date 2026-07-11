@@ -10,7 +10,7 @@ from aiogram.types import Message, CallbackQuery, FSInputFile, InputMediaPhoto
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from services.ai import generate_text
-from services.tarot_deck import TAROT_DECK, card_by_seed, card_image_path, random_card
+from services.tarot_deck import TAROT_DECK, card_by_seed, card_image_path, random_card, draw_cards
 from services.astrology import get_moon_info, get_daily_context
 from models.user import get_connection, is_premium, has_premium_access
 
@@ -348,7 +348,7 @@ async def spread3_regen(callback: CallbackQuery, state: FSMContext):
     status_text = random.choice(SPREAD3_STATUSES)
     status = await callback.message.answer(status_text)
     await _typing_delay(callback.message, 10)
-    cards = [random_card() for _ in range(3)]
+    cards = draw_cards(3)
     if day_offset >= 0:
         text = await _spread3_text(cards, positions, user_sign=user_sign, day_offset=day_offset)
     elif source == "situation" and situation:
@@ -466,7 +466,7 @@ async def cmd_spread(message: Message, positions: tuple[str, str, str] = DEFAULT
     status_text = random.choice(SPREAD3_STATUSES)
     status = await message.answer(status_text)
     await _typing_delay(message, 10)
-    cards = [random_card() for _ in range(3)]
+    cards = draw_cards(3)
     text = await _spread3_text(cards, positions, user_sign=user_sign)
     await status.delete()
     await _send_3_spread(message, cards, positions, text, state=state, source=source)
@@ -494,7 +494,7 @@ async def cmd_spread_3_situation(message: Message, state: FSMContext):
     status_text = random.choice(SPREAD3_STATUSES)
     status = await message.answer(status_text)
     await _typing_delay(message, 10)
-    cards = [random_card() for _ in range(3)]
+    cards = draw_cards(3)
     text = await _spread3_text(cards, positions, situation, user_sign)
     await status.delete()
     await _send_3_spread(message, cards, positions, text, state=state, source="situation")
@@ -566,7 +566,7 @@ async def cmd_spread_7(message: Message, state: FSMContext):
     status_text = random.choice(SPREAD7_STATUSES)
     status = await message.answer(status_text)
     await _typing_delay(message, 15)
-    cards = [random_card() for _ in range(7)]
+    cards = draw_cards(7)
     text = await _spread7_text(cards, situation)
 
     await status.delete()

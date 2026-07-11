@@ -130,6 +130,13 @@ def random_card() -> tuple[int, str]:
     return num, TAROT_DECK[num]
 
 
+def draw_cards(count: int) -> list[tuple[int, str]]:
+    """Draw count unique cards without replacement (like a real deck)."""
+    import random
+    nums = random.sample(range(1, 79), count)
+    return [(num, TAROT_DECK[num]) for num in nums]
+
+
 def card_by_seed(seed: str) -> tuple[int, str]:
     import hashlib
     num = int(hashlib.sha256(seed.encode()).hexdigest(), 16) % 78 + 1
