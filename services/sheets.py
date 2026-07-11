@@ -15,14 +15,18 @@ SCOPE = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/au
 _KEY_PATH = BASE_DIR / "zlata-500812-e45df0572f61.json"
 
 _SHEET: gspread.Spreadsheet | None = None
+_KEY_MISSING = False
 
 
-def _get_sheet() -> gspread.Spreadsheet:
-    global _SHEET
+def _get_sheet() -> gspread.Spreadsheet | None:
+    global _SHEET, _KEY_MISSING
     if _SHEET:
         return _SHEET
+    if _KEY_MISSING:
+        return None
     if not _KEY_PATH.exists():
-        raise FileNotFoundError(f"Google key not found: {_KEY_PATH}")
+        _KEY_MISSING = True
+        return None
     creds = ServiceAccountCredentials.from_json_keyfile_name(str(_KEY_PATH), SCOPE)
     client = gspread.authorize(creds)
     _SHEET = client.open("Zlata Users")
@@ -40,10 +44,8 @@ def _ensure_worksheet(spreadsheet: gspread.Spreadsheet, title: str, headers: lis
 
 def sync_users():
     """Sync users table to Google Sheets."""
-    try:
-        sheet = _get_sheet()
-    except Exception as e:
-        logging.error(f"Sheets sync failed (users): {e}")
+    sheet = _get_sheet()
+    if not sheet:
         return
 
     conn = get_connection()
@@ -70,10 +72,8 @@ def sync_users():
 
 def sync_readings():
     """Sync readings table to Google Sheets."""
-    try:
-        sheet = _get_sheet()
-    except Exception as e:
-        logging.error(f"Sheets sync failed (readings): {e}")
+    sheet = _get_sheet()
+    if not sheet:
         return
 
     conn = get_connection()
