@@ -5,8 +5,10 @@ from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery, LabeledPrice, PreCheckoutQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
+from config import YOOMONEY_WALLET
 from handlers.menu import main_menu_kb
 from models.user import grant_premium, is_premium, get_connection, was_deleted
+from services.yoomoney import get_ruble_plans, payment_link
 
 router = Router()
 
@@ -16,6 +18,7 @@ PLANS = {
     "6m": {"label": "6 месяцев", "stars": 750, "months": 6},
     "12m": {"label": "12 месяцев", "stars": 1400, "months": 12},
 }
+RUBLE_PLANS = get_ruble_plans()
 
 
 @router.message(Command("buy"))
@@ -48,6 +51,8 @@ async def cmd_buy(message: Message):
             text=f"{plan['label']} — {plan['stars']} ⭐",
             callback_data=f"buy_{key}",
         )
+    if YOOMONEY_WALLET:
+        b.button(text="💳 Оплатить рублями", callback_data="buy_ruble_menu")
     b.button(text="↩️ Назад", callback_data="menu_main")
     b.adjust(1)
 
@@ -61,7 +66,7 @@ async def cmd_buy(message: Message):
         "🌙 Сны без лимита\n"
         "💬 Чат без ограничений\n"
         "🔮 Расклады с выбором позиций\n\n"
-        "Выбери срок подписки:",
+        "Выбери способ оплаты:",
         reply_markup=b.as_markup(),
     )
 
@@ -82,6 +87,47 @@ async def buy_plan(callback: CallbackQuery):
     await callback.message.edit_text(
         f"💎 <b>Премиум — {plan['label']}</b>\n\n"
         f"Стоимость: <b>{plan['stars']} ⭐</b>\n"
+        f"Срок: <b>{plan['label']}</b>\n\n"
+        f"После оплаты премиум активируется автоматически.",
+        reply_markup=b.as_markup(),
+    )
+
+
+@router.callback_query(F.data == "buy_ruble_menu")
+async def buy_ruble_menu(callback: CallbackQuery):
+    await callback.answer()
+    b = InlineKeyboardBuilder()
+    for key, plan in RUBLE_PLANS.items():
+        b.button(text=f"{plan['label']} — {plan['amount']}₽", callback_data=f"buy_ruble_{key}")
+    b.button(text="↩️ Назад", callback_data="menu_buy")
+    b.adjust(1)
+    await callback.message.edit_text(
+        "💎 <b>Премиум — оплата рублями</b>\n\n"
+        "После оплаты премиум активируется автоматически.",
+        reply_markup=b.as_markup(),
+    )
+
+
+@router.callback_query(F.data.startswith("buy_ruble_"))
+async def buy_ruble(callback: CallbackQuery):
+    await callback.answer()
+    key = callback.data.split("_", 2)[2]
+    plan = RUBLE_PLANS.get(key)
+    if not plan:
+        await callback.answer("План не найден")
+        return
+
+    uid = callback.from_user.id
+    link = payment_link(key, uid)
+
+    b = InlineKeyboardBuilder()
+    b.button(text=f"💳 Оплатить {plan['amount']}₽", url=link)
+    b.button(text="↩️ Назад", callback_data="buy_ruble_menu")
+    b.adjust(1)
+
+    await callback.message.edit_text(
+        f"💎 <b>Премиум — {plan['label']}</b>\n\n"
+        f"Стоимость: <b>{plan['amount']}₽</b>\n"
         f"Срок: <b>{plan['label']}</b>\n\n"
         f"После оплаты премиум активируется автоматически.",
         reply_markup=b.as_markup(),

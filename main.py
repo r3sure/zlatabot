@@ -24,7 +24,10 @@ from handlers.payment import router as payment_router
 from handlers.admin import router as admin_router
 from handlers.starson import router as starson_router
 from handlers.matrix import router as matrix_router
+from aiohttp import web
+from config import YOOMONEY_SECRET
 from services.scheduler import SchedulerService
+from services.yoomoney import create_webhook_app
 
 logging.basicConfig(level=logging.INFO)
 
@@ -62,6 +65,15 @@ async def main():
     global scheduler
     scheduler = SchedulerService(bot)
     scheduler.start()
+
+    # Start YooMoney webhook server
+    if YOOMONEY_SECRET:
+        web_app = create_webhook_app()
+        runner = web.AppRunner(web_app)
+        await runner.setup()
+        site = web.TCPSite(runner, "0.0.0.0", 8080)
+        await site.start()
+        logging.info("YooMoney webhook server started on :8080")
 
     me = await bot.get_me()
     await bot.set_my_commands([
