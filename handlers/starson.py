@@ -210,8 +210,8 @@ async def stars_caption_received(message: Message, state: FSMContext):
 async def _ask_location(message: Message, state: FSMContext):
     await state.set_state(StarsForm.waiting_location)
     await message.answer(
-        "Теперь укажи <b>город и страну</b>:\n"
-        "<i>Сочи, Россия</i>\n\n"
+        "Теперь укажи <b>город</b>:\n"
+        "<i>Сочи</i> или <i>Москва</i>\n\n"
         "Или /skip — будет Москва."
     )
 
@@ -230,27 +230,25 @@ async def stars_location_received(message: Message, state: FSMContext):
         return
 
     loc_lower = raw.lower()
+
+    # Check KNOWN_CITIES
     for key, (lat, lon) in KNOWN_CITIES.items():
         if key in loc_lower:
             await state.update_data(stars_location=raw, stars_lat=lat, stars_lon=lon)
             await _do_generate(message, state)
             return
 
-    # Try geocoding
-    try:
-        from geopy.geocoders import Nominatim
-        geolocator = Nominatim(user_agent="ZlataStarBot/1.0")
-        geo = await asyncio.to_thread(geolocator.geocode, raw, timeout=5)
-        if geo and geo.latitude and geo.longitude:
-            await state.update_data(
-                stars_location=geo.address,
-                stars_lat=geo.latitude,
-                stars_lon=geo.longitude,
-            )
-            await _do_generate(message, state)
-            return
-    except Exception:
-        pass
+    # Check natal.py CITY_COORDS + Nominatim fallback
+    from services.natal import resolve_city_coords
+    coords = await asyncio.to_thread(resolve_city_coords, raw)
+    if coords.get("lng") and coords.get("lat"):
+        await state.update_data(
+            stars_location=raw,
+            stars_lat=coords["lat"],
+            stars_lon=coords["lng"],
+        )
+        await _do_generate(message, state)
+        return
 
     await message.answer(
         f"Не удалось найти «{raw}». Попробуй иначе, например:\n"

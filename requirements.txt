@@ -12,3 +12,4 @@ gspread
 oauth2client
 playwright
 skyfield
+geopy

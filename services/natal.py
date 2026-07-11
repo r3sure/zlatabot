@@ -89,6 +89,7 @@ CITY_COORDS = {
     "абакан": (91.44, 53.72, "Asia/Krasnoyarsk", "RU"),
     "бийск": (85.25, 52.52, "Asia/Barnaul", "RU"),
     "набережные челны": (52.34, 55.73, "Europe/Moscow", "RU"),
+    "нефтекамск": (54.25, 56.09, "Asia/Yekaterinburg", "RU"),
     "тольятти": (49.35, 53.53, "Europe/Samara", "RU"),
     "сочи": (39.73, 43.60, "Europe/Moscow", "RU"),
     "севастополь": (33.53, 44.62, "Europe/Moscow", "RU"),
@@ -110,6 +111,7 @@ CITY_COORDS = {
     "чернигов": (31.28, 51.50, "Europe/Kyiv", "UA"),
     "черкассы": (32.07, 49.43, "Europe/Kyiv", "UA"),
     "сумы": (34.80, 50.92, "Europe/Kyiv", "UA"),
+    "сызрань": (48.47, 53.16, "Europe/Samara", "RU"),
     "житомир": (28.67, 50.26, "Europe/Kyiv", "UA"),
     "ровно": (26.25, 50.62, "Europe/Kyiv", "UA"),
     "ивано-франковск": (24.71, 48.92, "Europe/Kyiv", "UA"),
@@ -240,8 +242,21 @@ CITY_COORDS = {
 }
 
 
+def _geocode_city(city: str) -> dict | None:
+    """Try Nominatim geocoding as fallback."""
+    try:
+        from geopy.geocoders import Nominatim
+        g = Nominatim(user_agent="ZlataBot/2.0", timeout=5)
+        loc = g.geocode(city)
+        if loc and loc.latitude and loc.longitude:
+            return {"lat": loc.latitude, "lng": loc.longitude, "tz_str": "Europe/Moscow", "nation": "RU"}
+    except Exception:
+        pass
+    return None
+
+
 def resolve_city_coords(city: str) -> dict:
-    """dict → AstrologicalSubject geonames → Moscow fallback."""
+    """dict → Nominatim geocoding → Moscow fallback."""
     city = (city or "").strip()
     if not city:
         return {"lat": DEFAULT_LAT, "lng": DEFAULT_LNG, "tz_str": "Europe/Moscow", "nation": "RU"}
@@ -251,33 +266,22 @@ def resolve_city_coords(city: str) -> dict:
         lng, lat, tz_str, nation = cached
         return {"lat": lat, "lng": lng, "tz_str": tz_str, "nation": nation}
 
-    # try kerykeion geonames via a temporary subject
-    try:
-        tmp = AstrologicalSubject(
-            name="tmp", year=2000, month=1, day=1,
-            hour=12, minute=0, city=city,
-        )
-        nation = getattr(tmp, "nation", "RU")
-        return {"lat": tmp.lat, "lng": tmp.lng, "tz_str": "Europe/Moscow", "nation": nation}
-    except Exception:
-        return {"lat": DEFAULT_LAT, "lng": DEFAULT_LNG, "tz_str": "Europe/Moscow", "nation": "RU"}
+    result = _geocode_city(city)
+    if result:
+        return result
+
+    return {"lat": DEFAULT_LAT, "lng": DEFAULT_LNG, "tz_str": "Europe/Moscow", "nation": "RU"}
 
 
 def validate_city(city: str) -> bool:
-    """Check if a city can be resolved (dict or geonames)."""
+    """Check if a city can be resolved (dict or Nominatim)."""
     city = (city or "").strip()
     if not city:
         return False
     if city.lower() in CITY_COORDS:
         return True
-    try:
-        tmp = AstrologicalSubject(
-            name="tmp", year=2000, month=1, day=1,
-            hour=12, minute=0, city=city,
-        )
-        return bool(tmp.lat and tmp.lng)
-    except Exception:
-        return False
+    result = _geocode_city(city)
+    return result is not None
 
 
 def get_user_birth_data(user_id: int) -> dict | None:
