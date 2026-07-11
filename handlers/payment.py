@@ -44,11 +44,9 @@ async def cmd_buy(message: Message):
     b = InlineKeyboardBuilder()
     for key, plan in PLANS.items():
         b.button(
-            text=f"{plan['label']} — {plan['stars']} ⭐",
+            text=plan['label'],
             callback_data=f"buy_{key}",
         )
-    if YOOMONEY_WALLET:
-        b.button(text="💳 Оплатить рублями", callback_data="buy_ruble_menu")
     b.button(text="↩️ Назад", callback_data="menu_main")
     b.adjust(1)
 
@@ -63,7 +61,7 @@ async def cmd_buy(message: Message):
         "🌙 Сны без лимита\n"
         "💬 Чат без ограничений\n"
         "🔮 Расклады с выбором позиций\n\n"
-        "Выбери способ оплаты:",
+        "Выбери срок подписки:",
         reply_markup=b.as_markup(),
     )
 
