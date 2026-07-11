@@ -79,7 +79,7 @@ async def _card_detailed_text(card_num: int, card_name: str) -> str:
 @router.message(Command("card"))
 async def cmd_card_day(message: Message):
     today = str(date.today())
-    card_num, card_name = card_by_seed(today)
+    card_num, card_name = card_by_seed(f"{today}_{message.chat.id}")
 
     status_text = random.choice([
         "Смотрю, что говорят карты... 🃏",
@@ -125,7 +125,7 @@ async def card_detail(callback: CallbackQuery):
         return
 
     today = str(date.today())
-    card_num, card_name = card_by_seed(today)
+    card_num, card_name = card_by_seed(f"{today}_{callback.from_user.id}")
     status = await callback.message.answer(
         random.choice([
             "Открываю глубинный смысл карты... 🔮",
