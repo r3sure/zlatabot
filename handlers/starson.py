@@ -174,6 +174,15 @@ async def stars_date_received(message: Message, state: FSMContext):
         )
         return
 
+    day, month, year = date_part.split(".")
+    year_int = int(year)
+    if year_int < 1900 or year_int > 2053:
+        await message.answer(
+            "📅 Диапазон доступных дат: <b>1900–2053 год</b>.\n"
+            "Пожалуйста, введи другую дату."
+        )
+        return
+
     await state.update_data(stars_date=date_part, stars_time=time_part)
     await state.set_state(StarsForm.waiting_text)
     await message.answer(
@@ -290,8 +299,8 @@ async def _do_generate(message: Message, state: FSMContext):
             await page.set_content(html)
             png_bytes = await page.screenshot(full_page=True)
             await browser.close()
-    except Exception as e:
-        await status.edit_text(f"❌ Ошибка при генерации: {e}")
+    except Exception:
+        await status.edit_text("❌ Не удалось построить карту. Попробуй другую дату или позже.")
         return
 
     await status.delete()
