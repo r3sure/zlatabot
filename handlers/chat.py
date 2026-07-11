@@ -61,9 +61,11 @@ async def cmd_chat(message: Message, state: FSMContext):
             reply_markup=b.as_markup(),
         )
     else:
+        _, _, user_gender = _get_user_info(user_id)
+        greeting = "друг" if user_gender == "male" else "подруга"
         await message.answer(
-            "🌟 <b>Чат со Златой</b>\n\n"
-            "Привет, подруга! Спрашивай что хочешь — я здесь, чтобы помочь 🌙\n\n"
+            f"🌟 <b>Чат со Златой</b>\n\n"
+            f"Привет, {greeting}! Спрашивай что хочешь — я здесь, чтобы помочь 🌙\n\n"
             "<i>Чтобы выйти, нажми «Выйти» или напиши /stop</i>",
             reply_markup=b.as_markup(),
         )
