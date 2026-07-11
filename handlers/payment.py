@@ -68,28 +68,6 @@ async def cmd_buy(message: Message):
     )
 
 
-@router.callback_query(F.data.startswith("buy_"))
-async def buy_plan(callback: CallbackQuery):
-    key = callback.data.split("_", 1)[1]
-    plan = PLANS.get(key)
-    if not plan:
-        await callback.answer("План не найден")
-        return
-
-    await callback.answer()
-
-    b = InlineKeyboardBuilder()
-    b.button(text=f"💎 Оплатить {plan['stars']} ⭐", callback_data=f"pay_{key}")
-    b.button(text="↩️ Назад", callback_data="menu_buy")
-    await callback.message.edit_text(
-        f"💎 <b>Премиум — {plan['label']}</b>\n\n"
-        f"Стоимость: <b>{plan['stars']} ⭐</b>\n"
-        f"Срок: <b>{plan['label']}</b>\n\n"
-        f"После оплаты премиум активируется автоматически.",
-        reply_markup=b.as_markup(),
-    )
-
-
 @router.callback_query(F.data == "buy_ruble_menu")
 async def buy_ruble_menu(callback: CallbackQuery):
     await callback.answer()
