@@ -19,6 +19,7 @@ COMPAT_LIMIT = 2
 
 
 class CompatForm(StatesGroup):
+    mode = State()
     sign1 = State()
     name1 = State()
     age1 = State()
@@ -74,18 +75,71 @@ async def cmd_compat(message: Message, state: FSMContext):
         return
 
     remaining = "∞" if has_premium_access(user_id) else str(COMPAT_LIMIT - used)
-    await state.set_state(CompatForm.sign1)
+    await state.set_state(CompatForm.mode)
+    b = InlineKeyboardBuilder()
+    b.button(text="👤 С собой", callback_data="compat_mode_self")
+    b.button(text="👥 С другим человеком", callback_data="compat_mode_other")
     await message.answer(
         "💫 <b>Совместимость</b>\n\n"
-        "Простой разбор по знакам, имени и возрасту.\n"
-        "Хочешь настоящую астрологию? 🙌\n"
-        "💞 <b>Глубокая совместимость</b> — синастрия по натальным картам, "
-        "реальные планетные аспекты. Доступна в меню 🔽\n\n"
+        "Простой разбор по знакам, имени и возрасту.\n\n"
         f"Осталось проверок сегодня: {remaining}\n\n"
-        "<b>Шаг 1 из 2</b> — расскажи о первом человеке.\n"
-        "Выбери его знак зодиака:",
-        reply_markup=_signs_kb("compat1"),
+        "С кем сравниваем?",
+        reply_markup=b.as_markup(),
     )
+
+
+@router.callback_query(F.data.startswith("compat_mode_"), CompatForm.mode)
+async def compat_mode_chosen(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+    mode = callback.data.split("_")[-1]
+
+    if mode == "self":
+        from services.personal_astro import parse_db_date, get_natal_data
+        data = get_natal_data(callback.from_user.id)
+        if not data or not data.get("birth_date"):
+            await callback.message.edit_text(
+                "Нужна твоя дата рождения. Заполни в /profile."
+            )
+            return
+        # Calculate age from birth_date
+        try:
+            d, m, y = parse_db_date(data["birth_date"])
+        except Exception:
+            await callback.message.edit_text(
+                "Некорректная дата в профиле. Попробуй другой режим."
+            )
+            return
+        from datetime import date
+        today = date.today()
+        age = today.year - y - ((today.month, today.day) < (m, d))
+        sign_code = data.get("zodiac_sign", "")
+        from services.astrology import ZODIAC_SIGNS_RU
+        sign_name = ZODIAC_SIGNS_RU.get(sign_code, sign_code)
+        await state.update_data(
+            mode="self",
+            name1=data.get("name", "Ты"),
+            sign1_code=sign_code,
+            sign1_name=sign_name,
+            age1=str(age),
+            day1=str(d),
+            month1=str(m),
+        )
+        await state.set_state(CompatForm.sign2)
+        await callback.message.edit_text(
+            f"✅ Использую твой профиль:\n"
+            f"{data.get('name', 'Ты')} ({sign_name}, {age} лет, род. {d}.{m}.)\n\n"
+            "<b>Шаг 2 из 2</b> — теперь расскажи о втором человеке.\n"
+            "Выбери его знак зодиака:",
+            reply_markup=_signs_kb("compat2"),
+        )
+    else:
+        await state.update_data(mode="other")
+        await state.set_state(CompatForm.sign1)
+        await callback.message.edit_text(
+            "<b>Шаг 1 из 2</b> — расскажи о первом человеке.\n"
+            "Выбери его знак зодиака:",
+            reply_markup=_signs_kb("compat1"),
+        )
 
 
 @router.callback_query(F.data.startswith("compat1_"))
@@ -307,9 +361,13 @@ async def compat_again(callback: CallbackQuery, state: FSMContext):
             await callback.answer()
             return
 
+    await state.set_state(CompatForm.mode)
+    b = InlineKeyboardBuilder()
+    b.button(text="👤 С собой", callback_data="compat_mode_self")
+    b.button(text="👥 С другим человеком", callback_data="compat_mode_other")
     await callback.message.answer(
         "💫 <b>Новая проверка совместимости</b>\n\n"
-        "Выбери знак первого человека:",
-        reply_markup=_signs_kb("compat1"),
+        "С кем сравниваем?",
+        reply_markup=b.as_markup(),
     )
     await callback.answer()
