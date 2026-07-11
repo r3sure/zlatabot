@@ -51,7 +51,12 @@ async def webhook_handler(request: web.Request) -> web.Response:
         label = data.get("label", "")
         sha1_hash = data.get("sha1_hash", "")
 
-        # Verify hash
+        # Accept test notifications
+        if data.get("test_notification") == "true" or operation_id == "test-notification":
+            logger.info("YooMoney: test notification accepted")
+            return web.Response(text="OK")
+
+        # Verify hash (real notifications use sha1_hash)
         raw = f"{notification_type}&{operation_id}&{amount}&{currency}&{dt}&{sender}&{codepro}&{YOOMONEY_SECRET}&{label}"
         expected = hashlib.sha1(raw.encode("utf-8")).hexdigest()
         if sha1_hash.lower() != expected.lower():
