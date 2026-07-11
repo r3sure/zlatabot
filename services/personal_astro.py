@@ -6,6 +6,7 @@ from kerykeion import AstrologicalSubject
 from services.ai import generate_text
 from services.astrology import get_daily_context, get_moon_info, ZODIAC_SIGNS_RU
 from models.user import get_connection
+from services.natal import resolve_city_coords
 
 
 def parse_db_date(date_str: str) -> tuple[int, int, int]:
@@ -121,37 +122,77 @@ async def generate_monthly_forecast(user_id: int) -> str:
         return "Звёзды пока не готовы открыть карту месяца. Попробуй позже ✨"
 
 
-async def generate_deep_compatibility(user_id: int, partner_name: str,
-                                       partner_birth: str, partner_time: str = "12:00") -> str:
-    data = get_natal_data(user_id)
-    if not data:
-        return "Нет данных. Заполни профиль в /profile"
-
-    natal1 = _natal_summary(data)
-
+def _make_natal_summary(name: str, birth: str, time: str, city: str) -> str | None:
+    """Build human-readable natal chart summary. Returns None on failure."""
     try:
-        day, month, year = parse_db_date(partner_birth)
-        hour, minute = map(int, partner_time.split(":"))
-        subj2 = AstrologicalSubject(
-            partner_name, year, month, day, hour, minute,
-            lng=37.62, lat=55.75,
-            tz_str="Europe/Moscow", online=False,
+        day, month, year = parse_db_date(birth)
+        hour, minute = map(int, time.split(":"))
+        coords = resolve_city_coords(city)
+        subj = AstrologicalSubject(
+            name, year, month, day, hour, minute,
+            lng=coords["lng"], lat=coords["lat"],
+            tz_str=coords.get("tz_str", "Europe/Moscow"),
+            online=False,
         )
-        m2 = subj2.model()
-        planets2 = []
-        for p in [m2.sun, m2.moon, m2.mercury, m2.venus, m2.mars,
-                  m2.jupiter, m2.saturn]:
+        m = subj.model()
+        planets = []
+        for p in [m.sun, m.moon, m.mercury, m.venus, m.mars,
+                  m.jupiter, m.saturn, m.uranus, m.neptune, m.pluto]:
             s = ZODIAC_SIGNS_RU.get(p.sign, p.sign)
             retro = " (р)" if p.retrograde else ""
-            planets2.append(f"{p.name} в {s}{retro}")
-        natal2 = f"{partner_name}, {ZODIAC_SIGNS_RU.get(m2.sun.sign, m2.sun.sign)}\n" + "\n".join(planets2)
+            planets.append(f"{p.name} в {s}{retro}")
+        sign_name = ZODIAC_SIGNS_RU.get(m.sun.sign, m.sun.sign)
+        return f"{name}, {sign_name}\n" + "\n".join(planets)
     except Exception:
+        return None
+
+
+async def generate_deep_compatibility(
+    user_id: int,
+    person1: dict | None = None,
+    person2: dict | None = None,
+    question: str = "",
+) -> str:
+    """
+    person1 = None → fetch from DB for given user_id (mode "self")
+    person2 = the other person.
+    Each person dict: {"name": str, "birth": "DD.MM.YYYY", "time": "HH:MM", "city": str}.
+    """
+    # Build person1 summary
+    if person1:
+        natal1 = _make_natal_summary(
+            person1["name"], person1["birth"],
+            person1.get("time", "12:00"), person1.get("city", "Москва"),
+        )
+        p1_label = person1["name"]
+    else:
+        data = get_natal_data(user_id)
+        if not data:
+            return "Нет данных твоего профиля. Заполни в /profile"
+        natal1 = _natal_summary(data)
+        p1_label = data.get("name", "Ты")
+
+    if not natal1:
+        return "Не удалось построить натальную карту. Проверь данные."
+
+    # Build person2 summary
+    if not person2:
+        return "Нет данных второго человека."
+
+    natal2 = _make_natal_summary(
+        person2["name"], person2["birth"],
+        person2.get("time", "12:00"), person2.get("city", "Москва"),
+    )
+    if not natal2:
         return "Не удалось построить карту партнёра. Проверь формат даты."
 
+    # Build prompt
+    question_part = f"\nВопрос/ситуация: {question}\n\n" if question else "\n"
     prompt = (
         f"Ты — астролог Злата. Сделай синастрический анализ совместимости двух людей.\n\n"
-        f"Натальная карта пользователя:\n{natal1}\n\n"
-        f"Натальная карта партнёра ({partner_name}):\n{natal2}\n\n"
+        f"Натальная карта {p1_label}:\n{natal1}\n\n"
+        f"Натальная карта партнёра ({person2['name']}):\n{natal2}\n"
+        f"{question_part}"
         f"Напиши разбор (7-10 предложений):\n"
         f"— Сильные стороны союза (какие планеты в гармонии)\n"
         f"— Сложные аспекты и зоны роста\n"

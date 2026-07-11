@@ -280,7 +280,7 @@ async def compat_month2(message: Message, state: FSMContext):
 
     b = InlineKeyboardBuilder()
     b.button(text="🔄 Ещё пару", callback_data="compat_again")
-    b.button(text="💞 Хочу глубже", callback_data="menu_deep_compat")
+    b.button(text="💞 Хочу глубже", callback_data="deep_from_compat")
     b.button(text="📋 Меню", callback_data="menu_main")
     b.adjust(1)
     await msg.edit_text(
