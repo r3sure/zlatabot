@@ -37,13 +37,9 @@ async def cmd_buy(message: Message):
         ).fetchone()
         conn.close()
         end = row["subscription_end"][:10] if row and row["subscription_end"] else "—"
-        await message.answer(
-            f"💎 У тебя уже есть премиум!\n"
-            f"Действует до <b>{end}</b>\n\n"
-            "Спасибо, что ты со мной ✨",
-            reply_markup=main_menu_kb(),
-        )
-        return
+        header = f"💎 У тебя уже есть премиум до <b>{end}</b>!\nМожешь продлить или увеличить срок:\n\n"
+    else:
+        header = ""
 
     b = InlineKeyboardBuilder()
     for key, plan in PLANS.items():
@@ -57,6 +53,7 @@ async def cmd_buy(message: Message):
     b.adjust(1)
 
     await message.answer(
+        f"{header}"
         "💎 <b>Премиум-подписка</b>\n\n"
         "Открой все возможности Златы:\n\n"
         "🔮 Расклад на 7 карт\n"
