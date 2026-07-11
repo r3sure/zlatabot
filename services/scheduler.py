@@ -69,7 +69,7 @@ class SchedulerService:
             )
 
             try:
-                text = await asyncio.to_thread(generate_text, prompt)
+                text = await generate_text(prompt)
             except Exception:
                 text = (
                     f"🔮 {sign_ru}, сегодня звёзды благосклонны к тебе.\n"

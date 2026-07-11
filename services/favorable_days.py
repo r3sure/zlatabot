@@ -34,6 +34,6 @@ async def generate_favorable_days(days: int = 10) -> str:
         f"Без подписи."
     )
     try:
-        return await asyncio.to_thread(generate_text, prompt, temperature=0.8)
+        return await generate_text(prompt, temperature=0.8)
     except Exception:
         return "Звёзды пока не готовы открыть карту благоприятных дней. Попробуй позже ✨"

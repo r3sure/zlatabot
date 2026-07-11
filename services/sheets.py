@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 from pathlib import Path
@@ -24,13 +25,33 @@ def _get_sheet() -> gspread.Spreadsheet | None:
         return _SHEET
     if _KEY_MISSING:
         return None
-    if not _KEY_PATH.exists():
-        _KEY_MISSING = True
-        return None
-    creds = ServiceAccountCredentials.from_json_keyfile_name(str(_KEY_PATH), SCOPE)
-    client = gspread.authorize(creds)
-    _SHEET = client.open("Zlata Users")
-    return _SHEET
+
+    # 1) Try env var SHEETS_CREDENTIALS (JSON string)
+    env_creds = os.environ.get("SHEETS_CREDENTIALS")
+    if env_creds:
+        try:
+            creds_dict = json.loads(env_creds)
+            creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, SCOPE)
+            client = gspread.authorize(creds)
+            _SHEET = client.open("Zlata Users")
+            return _SHEET
+        except Exception:
+            _KEY_MISSING = True
+            return None
+
+    # 2) Try local JSON file
+    if _KEY_PATH.exists():
+        try:
+            creds = ServiceAccountCredentials.from_json_keyfile_name(str(_KEY_PATH), SCOPE)
+            client = gspread.authorize(creds)
+            _SHEET = client.open("Zlata Users")
+            return _SHEET
+        except Exception:
+            _KEY_MISSING = True
+            return None
+
+    _KEY_MISSING = True
+    return None
 
 
 def _ensure_worksheet(spreadsheet: gspread.Spreadsheet, title: str, headers: list[str]):

@@ -1,7 +1,8 @@
+import asyncio
 import random
 
 import httpx
-from openai import OpenAI
+from openai import AsyncOpenAI
 
 from config import (
     PROXY,
@@ -16,28 +17,36 @@ from config import (
 _client = None
 _llm_provider = None
 
+# Limit concurrent AI calls to avoid overwhelming the API / server
+_ai_semaphore = asyncio.Semaphore(5)
 
-def _get_client() -> OpenAI:
-    global _client, _llm_provider
-    if _client is not None and _llm_provider == LLM_PROVIDER:
-        return _client
 
-    http_kwargs = {
+def _make_http_client() -> httpx.AsyncClient:
+    kwargs = {
         "follow_redirects": True,
         "timeout": httpx.Timeout(30.0, connect=10.0),
     }
     if PROXY:
-        http_kwargs["transport"] = httpx.HTTPTransport(proxy=PROXY)
-    http_client = httpx.Client(**http_kwargs)
+        from httpx import AsyncHTTPTransport
+        kwargs["transport"] = AsyncHTTPTransport(proxy=PROXY)
+    return httpx.AsyncClient(**kwargs)
+
+
+def _get_client() -> AsyncOpenAI:
+    global _client, _llm_provider
+    if _client is not None and _llm_provider == LLM_PROVIDER:
+        return _client
+
+    http_client = _make_http_client()
 
     if LLM_PROVIDER == "deepseek":
-        _client = OpenAI(
+        _client = AsyncOpenAI(
             api_key=DEEPSEEK_API_KEY,
             base_url=DEEPSEEK_BASE_URL,
             http_client=http_client,
         )
     else:
-        _client = OpenAI(
+        _client = AsyncOpenAI(
             api_key=GROQ_API_KEY,
             base_url="https://api.groq.com/openai/v1",
             http_client=http_client,
@@ -122,21 +131,22 @@ def _strip_md(text: str) -> str:
     return text.replace("**", "")
 
 
-def generate_text(prompt: str, temperature: float = 0.8) -> str:
-    client = _get_client()
-    response = client.chat.completions.create(
-        model=_model(),
-        messages=[
-            {"role": "system", "content": TEXT_SYSTEM_PROMPT},
-            {"role": "user", "content": prompt},
-        ],
-        temperature=temperature,
-    )
+async def generate_text(prompt: str, temperature: float = 0.8) -> str:
+    async with _ai_semaphore:
+        client = _get_client()
+        response = await client.chat.completions.create(
+            model=_model(),
+            messages=[
+                {"role": "system", "content": TEXT_SYSTEM_PROMPT},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=temperature,
+        )
     return _strip_md(response.choices[0].message.content.strip())
 
 
-def generate_chat(messages: list[dict], temperature: float = 0.85,
-                  user_name: str = "", user_sign: str = "", user_gender: str = "") -> str:
+async def generate_chat(messages: list[dict], temperature: float = 0.85,
+                        user_name: str = "", user_sign: str = "", user_gender: str = "") -> str:
     client = _get_client()
     system = random.choice(CHAT_SYSTEM_PROMPTS)
 
@@ -162,9 +172,10 @@ def generate_chat(messages: list[dict], temperature: float = 0.85,
     if user_name:
         system += gender_suffix
 
-    response = client.chat.completions.create(
-        model=_model(),
-        messages=[{"role": "system", "content": system}] + messages,
-        temperature=temperature,
-    )
+    async with _ai_semaphore:
+        response = await client.chat.completions.create(
+            model=_model(),
+            messages=[{"role": "system", "content": system}] + messages,
+            temperature=temperature,
+        )
     return _strip_md(response.choices[0].message.content.strip())

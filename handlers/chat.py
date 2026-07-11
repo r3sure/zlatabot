@@ -91,7 +91,7 @@ async def _chat_tarot_text(cards: list[tuple[int, str]], user_text: str, positio
         f"как будто {friend} рассказываешь. Без списков, без подписи."
     )
     try:
-        return await asyncio.to_thread(generate_text, prompt, temperature=0.85)
+        return await generate_text(prompt, temperature=0.85)
     except Exception:
         return "Карты показывают глубокую связь событий в твоей жизни. Доверься потоку."
 
@@ -252,9 +252,7 @@ async def chat_message(message: Message, state: FSMContext):
     user_name, user_sign, user_gender = _get_user_info(user_id)
 
     try:
-        reply = await asyncio.to_thread(
-            generate_chat, context, 0.85, user_name, user_sign, user_gender
-        )
+        reply = await generate_chat(context, 0.85, user_name, user_sign, user_gender)
     except Exception:
         fallback = "друг 💫" if user_gender == "male" else "подруга 💫"
         reply = f"Ой, что-то пошло не так... Попробуй переформулировать вопрос, {fallback}"

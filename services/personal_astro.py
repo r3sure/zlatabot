@@ -86,7 +86,7 @@ async def generate_personal_horoscope(user_id: int) -> str:
         f"Совет на день. Вдохновляюще, с обращением на «ты». Без подписи."
     )
     try:
-        return await asyncio.to_thread(generate_text, prompt, temperature=0.85)
+        return await generate_text(prompt, temperature=0.85)
     except Exception:
         return "Звёзды сегодня не спешат открывать карты. Попробуй позже ✨"
 
@@ -117,7 +117,7 @@ async def generate_monthly_forecast(user_id: int) -> str:
         f"Вдохновляюще, с обращением на «ты». Без подписи."
     )
     try:
-        return await asyncio.to_thread(generate_text, prompt, temperature=0.85)
+        return await generate_text(prompt, temperature=0.85)
     except Exception:
         return "Звёзды пока не готовы открыть карту месяца. Попробуй позже ✨"
 
@@ -201,6 +201,6 @@ async def generate_deep_compatibility(
         f"С обращением на «ты». Без подписи."
     )
     try:
-        return await asyncio.to_thread(generate_text, prompt, temperature=0.8)
+        return await generate_text(prompt, temperature=0.8)
     except Exception:
         return "Карты не спешат открывать эту связь. Попробуй позже ✨"

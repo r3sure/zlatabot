@@ -327,7 +327,7 @@ async def belief_show_horoscope(callback: CallbackQuery, state: FSMContext):
 
     msg = await callback.message.edit_text("🔮 Смотрю звёзды...")
     try:
-        text = await asyncio.to_thread(generate_text, prompt, temperature=0.85)
+        text = await generate_text(prompt, temperature=0.85)
     except Exception:
         text = (
             f"Звёзды сегодня благосклонны к {SIGN_DATIVE.get(sign_name, sign_name)}. "

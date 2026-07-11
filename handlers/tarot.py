@@ -56,7 +56,7 @@ async def _card_of_the_day_text(card_num: int, card_name: str) -> str:
         f"вдохновляюще, с обращением на «ты». Без подписи."
     )
     try:
-        return await asyncio.to_thread(generate_text, prompt)
+        return await generate_text(prompt)
     except Exception:
         return "Сегодня звёзды и карты подготовили для тебя важный урок. Доверься потоку."
 
@@ -71,7 +71,7 @@ async def _card_detailed_text(card_num: int, card_name: str) -> str:
         f"Вдохновляюще, с обращением на «ты». Без подписи."
     )
     try:
-        return await asyncio.to_thread(generate_text, prompt, temperature=0.85)
+        return await generate_text(prompt, temperature=0.85)
     except Exception:
         return "Карта несёт глубокий смысл. Попробуй позже вернуться к ней."
 
@@ -205,7 +205,7 @@ async def _spread3_text(cards: list[tuple[int, str]], positions: tuple[str, str,
             f"Красиво, вдохновляюще, с обращением на «ты». Без подписи. Без лишних слов."
         )
     try:
-        return await asyncio.to_thread(generate_text, prompt, temperature=0.85)
+        return await generate_text(prompt, temperature=0.85)
     except Exception:
         return (
             "Карты показывают глубокую взаимосвязь событий в твоей жизни. "
@@ -536,7 +536,7 @@ async def _spread7_text(cards: list[tuple[int, str]], situation: str) -> str:
         f"Красиво, вдохновляюще, с обращением на «ты». Без подписи."
     )
     try:
-        return await asyncio.to_thread(generate_text, prompt, temperature=0.85)
+        return await generate_text(prompt, temperature=0.85)
     except Exception:
         fallback = "\n".join(
             f"<b>{p}:</b> {name}" for p, (_, name) in zip(SPREAD7_POSITIONS, cards)

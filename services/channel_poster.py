@@ -233,7 +233,7 @@ async def _generate_energy_text() -> tuple[str, str, str]:
         f"какую энергию несёт этот день. "
         f"Без подписи. Только текст."
     )
-    text = await asyncio.to_thread(generate_text, prompt, 0.7)
+    text = await generate_text(prompt, 0.7)
     text = text.strip().strip('"').strip('"')
     return code, name, text
 
@@ -245,7 +245,7 @@ async def _generate_horoscope_text(sign_ru: str) -> str:
         f"Луна: {m['phase']} в знаке {m['sign']}.\n\n"
         f"Формат: 2-3 предложения. Без подписи. Без заголовка. Только текст."
     )
-    text = await asyncio.to_thread(generate_text, prompt, 0.7)
+    text = await generate_text(prompt, 0.7)
     return text.strip().strip('"').strip('"')
 
 
@@ -257,7 +257,7 @@ async def _generate_moon_text() -> str:
         f"что несёт эта энергия, чем заниматься, чего избегать. "
         f"Без подписи. Только текст."
     )
-    text = await asyncio.to_thread(generate_text, prompt, 0.7)
+    text = await generate_text(prompt, 0.7)
     return text.strip().strip('"').strip('"')
 
 

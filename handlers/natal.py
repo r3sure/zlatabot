@@ -63,7 +63,7 @@ async def cmd_natal(message: Message):
     )
 
     try:
-        text = await asyncio.to_thread(generate_text, detail_prompt)
+        text = await generate_text(detail_prompt)
     except Exception:
         text = (
             "🌞 Солнце — твоя стихия — интуиция.\n"
@@ -73,7 +73,7 @@ async def cmd_natal(message: Message):
         )
 
     try:
-        summary = await asyncio.to_thread(generate_text, summary_prompt)
+        summary = await generate_text(summary_prompt)
     except Exception:
         summary = "Энергии планет указывают на сильную интуицию и творческий потенциал."
 

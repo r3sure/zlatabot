@@ -36,7 +36,7 @@ async def cmd_moon(message: Message):
     )
 
     try:
-        text = await asyncio.to_thread(generate_text, prompt)
+        text = await generate_text(prompt)
     except Exception:
         text = (
             f"Энергия луны в фазе {moon['phase'].lower()} направляет тебя "

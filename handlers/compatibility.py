@@ -325,7 +325,7 @@ async def compat_month2(message: Message, state: FSMContext):
     )
 
     try:
-        text = await asyncio.to_thread(generate_text, prompt)
+        text = await generate_text(prompt)
     except Exception:
         text = (
             f"💕 Общая совместимость: {data['name1']} и {data['name2']} — "

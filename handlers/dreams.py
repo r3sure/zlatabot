@@ -48,7 +48,7 @@ async def _dream_text(dream: str) -> str:
         f"Заверши советом. Вдохновляюще, с обращением на «ты». Без подписи."
     )
     try:
-        return await asyncio.to_thread(generate_text, prompt, temperature=0.85)
+        return await generate_text(prompt, temperature=0.85)
     except Exception:
         return (
             "Твой сон наполнен глубокими символами, "
