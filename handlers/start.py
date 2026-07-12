@@ -18,6 +18,7 @@ router = Router()
 class StartForm(StatesGroup):
     belief = State()
     name = State()
+    gender = State()
     birth_date = State()
     birth_time = State()
     birth_city = State()
@@ -108,11 +109,25 @@ async def ask_birth_date(message: Message, state: FSMContext):
         await message.answer("Имя должно быть от 1 до 50 символов. Попробуй ещё раз:")
         return
     name = capitalize_name(raw)
-    gender = detect_gender(raw)
-    await state.update_data(name=name, gender=gender)
-    await state.set_state(StartForm.birth_date)
+    detected = detect_gender(raw)
+    await state.update_data(name=name, gender=detected)
+    await state.set_state(StartForm.gender)
+    b = InlineKeyboardBuilder()
+    b.button(text="👩 Женский", callback_data="gender_female")
+    b.button(text="👨 Мужской", callback_data="gender_male")
     await message.answer(
-        f"Приятно познакомиться, {name}!\n\n"
+        f"Приятно познакомиться, {name}!",
+        reply_markup=b.as_markup(),
+    )
+
+
+@router.callback_query(F.data.startswith("gender_"), StartForm.gender)
+async def gender_chosen(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+    chosen = callback.data.split("_")[1]  # "male" or "female"
+    await state.update_data(gender=chosen)
+    await state.set_state(StartForm.birth_date)
+    await callback.message.edit_text(
         "Укажи свою дату рождения:\n"
         "Формат: ДД.ММ.ГГГГ"
     )
@@ -158,9 +173,11 @@ async def show_confirmation(message: Message, state: FSMContext):
     b.button(text="✅ Да, всё верно", callback_data="confirm_yes")
     b.button(text="🔄 Заполнить заново", callback_data="confirm_redo")
 
+    gender_label = "Мужской" if data.get("gender") == "male" else "Женский"
     await message.answer(
         f"📋 <b>Проверь свои данные:</b>\n\n"
         f"Имя: {data.get('name', '—')}\n"
+        f"Пол: {gender_label}\n"
         f"Дата рождения: {data.get('birth_date', '—')}\n"
         f"Знак: {data.get('zodiac_sign', '—')}\n"
         f"Время рождения: {data.get('birth_time', '—')}\n"

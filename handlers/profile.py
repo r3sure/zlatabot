@@ -57,7 +57,7 @@ def _calc_sign_from_date(date_str: str) -> str:
 def _get_profile(user_id: int) -> dict | None:
     conn = get_connection()
     row = conn.execute(
-        "SELECT name, birth_date, birth_time, birth_city, zodiac_sign, "
+        "SELECT name, birth_date, birth_time, birth_city, zodiac_sign, gender, "
         "subscription_status, subscription_end FROM users WHERE user_id = ?",
         (user_id,),
     ).fetchone()
@@ -89,6 +89,7 @@ async def cmd_profile(message: Message):
 
     b = InlineKeyboardBuilder()
     b.button(text="✏️ Имя", callback_data="edit_name")
+    b.button(text="👤 Пол", callback_data="edit_gender")
     b.button(text="📅 Дата", callback_data="edit_birth_date")
     b.button(text="🕐 Время", callback_data="edit_birth_time")
     b.button(text="🏙️ Город", callback_data="edit_birth_city")
@@ -100,9 +101,12 @@ async def cmd_profile(message: Message):
     b.button(text="📋 Меню", callback_data="menu_main")
     b.adjust(2)
 
+    gender_label = "Мужской" if profile.get("gender") == "male" else "Женский"
+
     await message.answer(
         f"👤 <b>Твой профиль</b>\n\n"
         f"Имя: {profile['name'] or '—'}\n"
+        f"Пол: {gender_label}\n"
         f"Дата рождения: {profile['birth_date'] or '—'}\n"
         f"Знак: {profile['zodiac_sign'] or '—'}\n"
         f"Время рождения: {profile['birth_time'] or '—'}\n"
@@ -115,6 +119,7 @@ async def cmd_profile(message: Message):
 
 EDIT_LABELS = {
     "edit_name": ("name", "Напиши новое имя (или псевдоним):"),
+    "edit_gender": ("gender", None),
     "edit_birth_date": ("birth_date", "Напиши новую дату рождения в формате ДД.ММ.ГГГГ:"),
     "edit_birth_time": ("birth_time", "Напиши новое время рождения в формате ЧЧ:ММ:"),
     "edit_birth_city": ("birth_city", "Напиши новый город рождения:"),
@@ -136,10 +141,37 @@ async def edit_start(callback: CallbackQuery, state: FSMContext):
         return
 
     field, question = EDIT_LABELS[cb]
+
+    if field == "gender":
+        await state.set_state(EditProfile.field)
+        await state.update_data(field=field)
+        b = InlineKeyboardBuilder()
+        b.button(text="👩 Женский", callback_data="edit_gender_female")
+        b.button(text="👨 Мужской", callback_data="edit_gender_male")
+        await callback.message.edit_text("Выбери пол:", reply_markup=b.as_markup())
+        await callback.answer()
+        return
+
     await state.set_state(EditProfile.field)
     await state.update_data(field=field)
     await callback.message.edit_text(question)
     await callback.answer()
+
+
+@router.callback_query(F.data.startswith("edit_gender_"), EditProfile.field)
+async def edit_gender_cb(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+    chosen = callback.data.split("_")[-1]  # "female" or "male"
+    uid = callback.from_user.id
+    conn = get_connection()
+    conn.execute("UPDATE users SET gender = ? WHERE user_id = ?", (chosen, uid))
+    conn.commit()
+    conn.close()
+    await state.clear()
+    await callback.message.edit_text(
+        f"✅ Пол обновлён!",
+        reply_markup=main_menu_kb(),
+    )
 
 
 @router.message(EditProfile.field)
