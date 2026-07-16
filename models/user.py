@@ -206,7 +206,7 @@ def was_deleted(user_id: int) -> bool:
     return bool(row and row["is_deleted"])
 
 
-def grant_premium(user_id: int, months: int = 1):
+def grant_premium(user_id: int, months: int = 1) -> str:
     """Grant or extend full premium for N months."""
     from datetime import datetime, timedelta
     conn = get_connection()
@@ -223,10 +223,16 @@ def grant_premium(user_id: int, months: int = 1):
     else:
         base = now
     end = (base + timedelta(days=30 * months)).isoformat()
-    conn.execute(
-        "UPDATE users SET subscription_status = 'premium', subscription_end = ? WHERE user_id = ?",
-        (end, user_id),
-    )
+    if row:
+        conn.execute(
+            "UPDATE users SET subscription_status = 'premium', subscription_end = ? WHERE user_id = ?",
+            (end, user_id),
+        )
+    else:
+        conn.execute(
+            "INSERT INTO users (user_id, name, subscription_status, subscription_end) VALUES (?, 'User', 'premium', ?)",
+            (user_id, end),
+        )
     conn.commit()
     conn.close()
     return end
