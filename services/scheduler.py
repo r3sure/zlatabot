@@ -29,7 +29,6 @@ class SchedulerService:
         self.scheduler.add_job(self.channel_moon, "cron", hour=16, minute=0)
         self.scheduler.add_job(self.channel_horoscope_4, "cron", hour=18, minute=0)
         self.scheduler.add_job(self.rotate_signs, "cron", hour=0, minute=0)
-        self.scheduler.add_job(self.sync_sheets, "cron", minute="*/5")
         self.scheduler.start()
         logger.info("Планировщик запущен (канал + рассылка + синхронизация)")
 
@@ -174,12 +173,5 @@ class SchedulerService:
             await post_horoscope(self.bot, signs[3])
         except Exception as e:
             logger.error("channel_horoscope_4: %s", e)
-
-    async def sync_sheets(self):
-        from services.sheets import sync_all
-        try:
-            await asyncio.to_thread(sync_all)
-        except Exception as e:
-            logger.error("sync_sheets: %s", e)
 
 

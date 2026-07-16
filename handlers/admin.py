@@ -9,7 +9,6 @@ from aiogram.types import Message
 
 from config import ADMIN_IDS
 from models.user import grant_premium, get_connection
-from services.sheets import sync_all
 
 router = Router()
 
@@ -34,14 +33,6 @@ async def cmd_grant(message: Message, command: CommandObject):
     end = grant_premium(uid, months)
     await message.answer(f"✅ Премиум {months} мес. → {uid} до {end[:10]}")
 
-
-@router.message(Command("sync"))
-async def cmd_sync(message: Message):
-    if not _is_admin(message):
-        return
-    msg = await message.answer("🔄 Синхронизирую...")
-    await asyncio.to_thread(sync_all)
-    await msg.edit_text("✅ Готово")
 
 
 @router.message(Command("users"))
