@@ -23,14 +23,13 @@ class SchedulerService:
         self.scheduler.add_job(self.morning_digest, "cron", hour=5, minute=0)
         # Channel auto-posting
         self.scheduler.add_job(self.channel_energy, "cron", hour=8, minute=0)
+        self.scheduler.add_job(self.channel_moon, "cron", hour=9, minute=0)
         self.scheduler.add_job(self.channel_horoscope_1, "cron", hour=10, minute=0)
         self.scheduler.add_job(self.channel_horoscope_2, "cron", hour=12, minute=0)
         self.scheduler.add_job(self.channel_horoscope_3, "cron", hour=14, minute=0)
-        self.scheduler.add_job(self.channel_moon, "cron", hour=16, minute=0)
-        self.scheduler.add_job(self.channel_horoscope_4, "cron", hour=18, minute=0)
         self.scheduler.add_job(self.rotate_signs, "cron", hour=0, minute=0)
         self.scheduler.start()
-        logger.info("Планировщик запущен (канал + рассылка + синхронизация)")
+        logger.info("Планировщик запущен (канал + рассылка)")
 
     async def stop(self):
         self.scheduler.shutdown(wait=False)
@@ -117,16 +116,16 @@ class SchedulerService:
 
     # ── Channel auto-posting ───────────────────────────────────
 
-    _sign_batch = 0  # which 4 signs to post today (0, 1, 2)
+    _sign_batch = 0  # which 3 signs to post today (0, 1, 2, 3)
 
-    def _next_signs(self, count=4):
+    def _next_signs(self, count=3):
         from services.channel_poster import ALL_SIGNS
         offset = self._sign_batch * count
         signs = [ALL_SIGNS[(offset + i) % 12] for i in range(count)]
         return signs
 
     async def rotate_signs(self):
-        self._sign_batch = (self._sign_batch + 1) % 3
+        self._sign_batch = (self._sign_batch + 1) % 4
 
     async def channel_energy(self):
         from services.channel_poster import post_energy_day
@@ -138,7 +137,7 @@ class SchedulerService:
     async def channel_horoscope_1(self):
         from services.channel_poster import post_horoscope
         try:
-            signs = self._next_signs(4)
+            signs = self._next_signs(3)
             await post_horoscope(self.bot, signs[0])
         except Exception as e:
             logger.error("channel_horoscope_1: %s", e)
@@ -146,7 +145,7 @@ class SchedulerService:
     async def channel_horoscope_2(self):
         from services.channel_poster import post_horoscope
         try:
-            signs = self._next_signs(4)
+            signs = self._next_signs(3)
             await post_horoscope(self.bot, signs[1])
         except Exception as e:
             logger.error("channel_horoscope_2: %s", e)
@@ -154,7 +153,7 @@ class SchedulerService:
     async def channel_horoscope_3(self):
         from services.channel_poster import post_horoscope
         try:
-            signs = self._next_signs(4)
+            signs = self._next_signs(3)
             await post_horoscope(self.bot, signs[2])
         except Exception as e:
             logger.error("channel_horoscope_3: %s", e)
@@ -165,13 +164,3 @@ class SchedulerService:
             await post_moon_day(self.bot)
         except Exception as e:
             logger.error("channel_moon: %s", e)
-
-    async def channel_horoscope_4(self):
-        from services.channel_poster import post_horoscope
-        try:
-            signs = self._next_signs(4)
-            await post_horoscope(self.bot, signs[3])
-        except Exception as e:
-            logger.error("channel_horoscope_4: %s", e)
-
-
