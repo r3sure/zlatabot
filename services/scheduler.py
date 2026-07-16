@@ -1,11 +1,15 @@
 import asyncio
 import logging
+from datetime import date
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from aiogram import Bot
+from aiogram.types import FSInputFile
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from services.ai import generate_text
 from services.astrology import get_planets_summary, get_moon_info, ZODIAC_SIGNS_RU, SIGN_GENITIVE
+from services.tarot_deck import card_by_seed, card_image_path
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +20,7 @@ class SchedulerService:
         self.scheduler = AsyncIOScheduler()
 
     def start(self):
-        self.scheduler.add_job(self.morning_digest, "cron", hour=9, minute=0)
+        self.scheduler.add_job(self.morning_digest, "cron", hour=5, minute=0)
         # Channel auto-posting
         self.scheduler.add_job(self.channel_energy, "cron", hour=8, minute=0)
         self.scheduler.add_job(self.channel_horoscope_1, "cron", hour=10, minute=0)
@@ -77,9 +81,7 @@ class SchedulerService:
                 )
 
             try:
-                from aiogram.utils.keyboard import InlineKeyboardBuilder
                 kb = InlineKeyboardBuilder()
-                kb.button(text="🃏 Карта дня", callback_data="digest_card")
                 kb.button(text="📋 Меню", callback_data="menu_main")
                 await self.bot.send_message(
                     user_id,
@@ -88,6 +90,29 @@ class SchedulerService:
                 )
             except Exception as e:
                 logger.warning("Ошибка отправки юзеру %s: %s", user_id, e)
+
+            # Карта дня — второе сообщение
+            try:
+                today = str(date.today())
+                card_num, card_name = card_by_seed(f"{today}_{user_id}")
+                img_path = card_image_path(card_num)
+                kb2 = InlineKeyboardBuilder()
+                kb2.button(text="🔮 Подробнее", callback_data="card_detail")
+                if img_path:
+                    await self.bot.send_photo(
+                        user_id,
+                        FSInputFile(img_path),
+                        caption=f"🃏 <b>Карта дня</b>\n\n{card_name}",
+                        reply_markup=kb2.as_markup(),
+                    )
+                else:
+                    await self.bot.send_message(
+                        user_id,
+                        f"🃏 <b>Карта дня</b>\n\n{card_name}",
+                        reply_markup=kb2.as_markup(),
+                    )
+            except Exception as e:
+                logger.warning("Ошибка карты дня юзеру %s: %s", user_id, e)
 
             await asyncio.sleep(0.05)
 
