@@ -36,12 +36,18 @@ async def cmd_grant(message: Message, command: CommandObject):
 
 
 @router.message(Command("users"))
-async def cmd_users(message: Message):
+async def cmd_users(message: Message, command: CommandObject):
     if not _is_admin(message):
         return
+    page = 1
+    if command.args and command.args.strip().isdigit():
+        page = max(1, int(command.args.strip()))
+    per_page = 30
     conn = get_connection()
+    total = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
     rows = conn.execute(
-        "SELECT user_id, name, subscription_status, created_at FROM users ORDER BY created_at DESC"
+        "SELECT user_id, name, subscription_status, created_at FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?",
+        (per_page, (page - 1) * per_page),
     ).fetchall()
     conn.close()
     if not rows:
@@ -53,7 +59,13 @@ async def cmd_users(message: Message):
         f"{r['created_at'][:10] if r['created_at'] else '—'}"
         for r in rows
     ]
-    await message.answer("📋 <b>Пользователи:</b>\n\n" + "\n".join(lines[:30]))
+    total_pages = (total + per_page - 1) // per_page
+    footer = f"\n\n/users {page + 1} — след. страница" if page < total_pages else ""
+    await message.answer(
+        f"📋 <b>Пользователи</b> (стр. {page}/{total_pages}, всего {total}):\n\n"
+        + "\n".join(lines)
+        + footer
+    )
 
 
 @router.message(Command("userinfo"))
